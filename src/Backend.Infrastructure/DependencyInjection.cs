@@ -1,4 +1,6 @@
 using Backend.Infrastructure.Persistence;
+using Backend.Application.Interfaces;
+using Backend.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +18,9 @@ public static class DependencyInjection
         }
 
         services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(connectionString));
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IJwtTokenService, JwtTokenService>();
+        services.AddSingleton<IPasswordHasher, PasswordHasher>();
 
         return services;
     }

@@ -49,6 +49,33 @@ Settings load from `appsettings.json`, then `appsettings.{ASPNETCORE_ENVIRONMENT
 
 Keep secrets out of the appsettings files. Use environment variables, or `dotnet user-secrets` locally.
 
+### Authentication
+
+Set the JWT secret and database password outside committed configuration:
+
+```bash
+dotnet user-secrets init --project src/Backend.API
+dotnet user-secrets set "Jwt:Secret" "<long-random-secret-at-least-32-characters>" --project src/Backend.API
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=backend_dev;Username=postgres;Password=<postgres-password>" --project src/Backend.API
+dotnet run --project src/Backend.API --launch-profile http
+```
+
+Apply the generated migration with the same database connection:
+
+```bash
+dotnet ef database update --project src/Backend.Infrastructure --startup-project src/Backend.API
+```
+
+Development-only seed accounts are created once at startup:
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Admin | admin@minijira.com | Admin@123 |
+| ProjectManager | manager@minijira.com | Manager@123 |
+| Employee | employee@minijira.com | Employee@123 |
+
+To change a seed password, change the password in `DevelopmentDataSeeder.cs`, delete that account from PostgreSQL once, and restart the application in Development.
+
 ## API conventions
 
 Controllers inherit `ApiControllerBase` and are served under `/api/{controller}`. Errors share the `ApiResponse` shape:

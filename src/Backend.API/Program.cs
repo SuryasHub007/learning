@@ -2,6 +2,8 @@ using Backend.API.Extensions;
 using Backend.API.Middleware;
 using Backend.Application;
 using Backend.Infrastructure;
+using Backend.Infrastructure.Persistence;
+using Backend.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,11 +12,20 @@ builder.Services
     .AddInfrastructure(builder.Configuration)
     .AddApiControllers()
     .AddSwaggerDocumentation()
+    .AddJwtAuthentication(builder.Configuration)
     .AddConfiguredCors(builder.Configuration);
 
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+    await DevelopmentDataSeeder.SeedAsync(dbContext, passwordHasher);
+}
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
@@ -39,6 +50,9 @@ else
 }
 
 app.UseCors(ServiceCollectionExtensions.CorsPolicyName);
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 app.MapHealthChecks("/health");
